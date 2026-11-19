@@ -217,7 +217,12 @@ export function explain(cells: ComparisonCell[], score: number | null): string {
     parts.push(
       `Not confirmed by the listing: ${list(unknowns.map((c) => ATTRIBUTE_LABELS[c.attribute].toLowerCase()))}.`,
     );
-  if (!parts.length) parts.push("No attributes could be confirmed against your preferences.");
+  if (!parts.length)
+    parts.push(
+      active.length === 0
+        ? "You haven't chosen any preferences yet, so this is just a similar-looking bag."
+        : "No attributes could be confirmed against your preferences.",
+    );
   if (score === null) parts.push("You chose no preferred attributes, so results are not scored.");
   return parts.join(" ");
 }

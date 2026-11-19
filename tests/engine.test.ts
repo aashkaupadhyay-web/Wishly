@@ -144,7 +144,9 @@ describe("explanations", () => {
   });
 
   it("never claims a match when nothing matched", () => {
-    expect(explain([], 0)).toMatch(/No attributes could be confirmed/);
+    const cell = { attribute: "color", mode: "prefer", original: "Black", candidate: null, status: "unknown", mustSatisfied: false } as const;
+    expect(explain([{ ...cell, attribute: "color" }], 0)).toMatch(/Not confirmed|No attributes could be confirmed/);
+    expect(explain([], null)).toMatch(/haven't chosen any preferences/);
   });
 });
 

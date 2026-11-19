@@ -15,6 +15,8 @@ interface Response {
   excluded: { mustFail: number; unknownRequired: number; sameProduct: number; duplicate: number };
   notice: string | null;
   recommendations: Rec[];
+  liveRecommendations: Rec[];
+  liveStats: { fetched: number; passed: number };
 }
 
 const MODES: { mode: PreferenceMode; label: string }[] = [
@@ -208,8 +210,24 @@ export function DiscoverClient({ items, initialId, liveAvailable }: { items: Wis
               )}
               {data.notice && <p className="rounded-lg bg-sand px-3 py-2 text-sm" role="status">{data.notice}</p>}
 
+              {includeLive && data.live.count > 0 && (
+                <p className="text-sm text-ink/70" role="status">
+                  {data.liveStats.passed === 0
+                    ? `None of the ${data.liveStats.fetched} live results met your must-have requirements (live listings often don't state attributes like material or closure). Try changing a must-have to Prefer.`
+                    : `${data.liveStats.passed} of ${data.liveStats.fetched} live results met your requirements.`}
+                </p>
+              )}
+
+              {[
+                { title: data.liveRecommendations.length ? "Top matches overall" : null, list: data.recommendations },
+                { title: "From Google Shopping", list: data.liveRecommendations },
+              ]
+                .filter((sec) => sec.list.length > 0)
+                .map((sec) => (
+              <div key={sec.title ?? "main"} className="space-y-3">
+                {sec.title && <h2 className="font-display text-xl">{sec.title}</h2>}
               <div className="grid gap-4 md:grid-cols-3">
-                {data.recommendations.map((rec, idx) => {
+                {sec.list.map((rec, idx) => {
                   const key = rec.product.id ?? rec.product.name;
                   return (
                     <article key={key} className="card flex flex-col overflow-hidden">
@@ -269,8 +287,9 @@ export function DiscoverClient({ items, initialId, liveAvailable }: { items: Wis
                   );
                 })}
               </div>
-
-              {data.recommendations.length > 0 && <CompareTable original={original.name} recs={data.recommendations} />}
+              <CompareTable original={original.name} recs={sec.list} />
+              </div>
+                ))}
 
               <p className="text-xs text-ink/50">
                 Considered {data.considered} products. Excluded: {data.excluded.mustFail} failed a must-have, {data.excluded.unknownRequired} couldn&apos;t confirm a must-have, {data.excluded.sameProduct + data.excluded.duplicate} same/duplicate.
@@ -285,8 +304,8 @@ export function DiscoverClient({ items, initialId, liveAvailable }: { items: Wis
 
 function CompareTable({ original, recs }: { original: string; recs: Rec[] }) {
   return (
-    <section aria-labelledby="cmp-h" className="card overflow-x-auto">
-      <h2 id="cmp-h" className="px-5 pt-4 font-display text-xl">Side-by-side</h2>
+    <section aria-label="Side-by-side comparison" className="card overflow-x-auto">
+      <h3 className="px-5 pt-4 font-display text-lg">Side-by-side</h3>
       <table className="mt-2 w-full min-w-[560px] text-sm">
         <thead>
           <tr className="text-left text-xs uppercase tracking-wide text-ink/50">

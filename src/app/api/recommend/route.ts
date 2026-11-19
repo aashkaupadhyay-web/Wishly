@@ -57,7 +57,12 @@ export async function POST(req: Request) {
   }
 
   // ONE engine for both sources.
-  const result = recommend(original, candidates, preferences);
+  const full = recommend(original, candidates, preferences, Number.POSITIVE_INFINITY);
+  const top = full.recommendations.slice(0, 3);
+  // Same ranking, just sliced: the best live matches that didn't make the overall top 3.
+  const liveTop = full.recommendations.filter((r) => r.product.source === "serpapi" && !top.includes(r)).slice(0, 3);
+  const livePassed = full.recommendations.filter((r) => r.product.source === "serpapi").length;
+  const result = { ...full, recommendations: [...top, ...liveTop] };
 
   // Persist the search + results (best effort; the user still gets results if this fails).
   let searchId: string | null = null;
@@ -93,7 +98,9 @@ export async function POST(req: Request) {
     live,
     considered: result.considered,
     excluded: result.excluded,
-    notice: result.notice,
-    recommendations: result.recommendations.map((r, i) => ({ ...r, resultId: resultIds[i] })),
+    notice: full.recommendations.length < 3 ? full.notice : null,
+    liveStats: { fetched: live.count, passed: livePassed },
+    recommendations: top.map((r, i) => ({ ...r, resultId: resultIds[i] })),
+    liveRecommendations: liveTop.map((r, i) => ({ ...r, resultId: resultIds[top.length + i] })),
   });
 }
