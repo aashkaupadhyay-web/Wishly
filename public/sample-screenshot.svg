@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 520" width="360" height="520">
+  <rect width="360" height="520" fill="#ffffff"/>
+  <rect width="360" height="44" fill="#f3f0ea"/>
+  <text x="16" y="28" font-family="Georgia,serif" font-size="16" fill="#1f1b16">Maison Larue</text>
+  <rect x="20" y="64" width="320" height="250" rx="8" fill="#efe8dc"/>
+  <path d="M110 150 C 110 80, 250 80, 250 150" fill="none" stroke="#2a2623" stroke-width="9" stroke-linecap="round"/>
+  <path d="M90 150 H270 L254 285 H106 Z" fill="#2a2623"/>
+  <circle cx="180" cy="168" r="6" fill="#c9a227"/>
+  <rect x="100" y="150" width="160" height="6" fill="#c9a227"/>
+  <text x="20" y="346" font-family="Georgia,serif" font-size="20" fill="#1f1b16">Atlas Structured Work Tote</text>
+  <text x="20" y="372" font-family="Arial,sans-serif" font-size="13" fill="#555">Black leather · gold-tone hardware</text>
+  <text x="20" y="394" font-family="Arial,sans-serif" font-size="13" fill="#555">Zip-top closure · medium</text>
+  <rect x="20" y="420" width="320" height="42" rx="21" fill="#1f1b16"/>
+  <text x="180" y="446" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#fff">Sample screenshot</text>
+</svg>
