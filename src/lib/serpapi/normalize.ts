@@ -1,92 +1,9 @@
-import { isSafeHttpUrl } from "../validation";
+import { extractAttributes } from "../extract";
 import type { Product } from "../types";
+import { isSafeHttpUrl } from "../validation";
 
-type Rule = [RegExp, string];
-
-const CATEGORY: Rule[] = [
-  [/\btotes?\b/i, "Tote"],
-  [/\bshoulder\s+bags?\b/i, "Shoulder Bag"],
-  [/\bcross[\s-]?body\b/i, "Crossbody"],
-  [/\bsatchels?\b/i, "Satchel"],
-  [/\bbucket\s+bags?\b/i, "Bucket Bag"],
-  [/\btop[\s-]?handle\b/i, "Top-Handle"],
-];
-const COLOR: Rule[] = [
-  [/\b(black|jet black|onyx)\b/i, "Black"],
-  [/\bbrown\b/i, "Brown"],
-  [/\btan\b/i, "Tan"],
-  [/\bwhite\b/i, "White"],
-  [/\bbeige\b/i, "Beige"],
-  [/\bred\b/i, "Red"],
-];
-const MATERIAL: Rule[] = [
-  [/\b(vegan|faux|pu)[\s-]leather\b/i, "Vegan Leather"],
-  // Plain "leather" must not fire on "vegan/faux/PU leather".
-  [/(?<!\b(?:vegan|faux|pu)[\s-])\bleather\b/i, "Leather"],
-  [/\bsuede\b/i, "Suede"],
-  [/\bcanvas\b/i, "Canvas"],
-  [/\bnylon\b/i, "Nylon"],
-];
-const STYLE: Rule[] = [
-  [/\bstructured\b/i, "Structured"],
-  [/\bslouch(y)?\b/i, "Slouchy"],
-  [/\bminimal(ist)?\b/i, "Minimalist"],
-  [/\bclassic\b/i, "Classic"],
-  [/\bcasual\b/i, "Casual"],
-];
-const SILHOUETTE: Rule[] = [
-  [/\bstructured\b/i, "Structured"],
-  [/\bslouch(y)?\b/i, "Slouchy"],
-  [/\bboxy\b/i, "Boxy"],
-  [/\brounded\b/i, "Rounded"],
-  [/\btrapezoid\b/i, "Trapezoid"],
-];
-const HARDWARE: Rule[] = [
-  [/\bgold[\s-]?(tone\b|hardware\b)/i, "Gold"],
-  [/\bsilver[\s-]?(tone\b|hardware\b)/i, "Silver"],
-  [/\bbrass\s+hardware\b/i, "Brass"],
-  [/\bblack\s+hardware\b/i, "Black"],
-];
-const CLOSURE: Rule[] = [
-  [/\bzip(per|-top|\s+top|\s+closure)?\b/i, "Zipper"],
-  [/\bmagnetic\b/i, "Magnetic Snap"],
-  [/\bbuckle\b/i, "Buckle"],
-  [/\bopen[\s-]top\b/i, "Open Top"],
-  [/\bdrawstring\b/i, "Drawstring"],
-];
-/** Returns a value only when exactly one distinct value is explicitly supported by the text. */
-function detect(text: string, rules: Rule[]): string | null {
-  const found = new Set<string>();
-  for (const [re, value] of rules) if (re.test(text)) found.add(value);
-  return found.size === 1 ? [...found][0] : null;
-}
-
-/** Size words only count when they plainly describe the bag ("medium leather tote", "large size"). */
-function detectSize(text: string): string | null {
-  const found = new Set<string>();
-  const re = /\b(mini|small|medium|large)\b(?:\W+\w+){0,2}?\W+(?:bag|tote|handbag|satchel|crossbody|purse)\b|\b(mini|small|medium|large)\s+size\b/gi;
-  for (const m of text.matchAll(re)) {
-    const word = (m[1] ?? m[2]).toLowerCase();
-    found.add(word[0].toUpperCase() + word.slice(1));
-  }
-  return found.size === 1 ? [...found][0] : null;
-}
-
-/** Deterministic text rules. Anything not explicitly stated stays null (unknown). */
-export function extractAttributes(text: string) {
-  const category = detect(text, CATEGORY);
-  const material = detect(text, MATERIAL);
-  return {
-    category,
-    color: detect(text, COLOR),
-    material,
-    style: detect(text, STYLE),
-    silhouette: detect(text, SILHOUETTE),
-    hardware: detect(text, HARDWARE),
-    closure: detect(text, CLOSURE),
-    size: detectSize(text),
-  };
-}
+// Re-exported so existing imports keep working; the rules live in ../extract.
+export { extractAttributes };
 
 function hash(s: string): string {
   let h = 5381;

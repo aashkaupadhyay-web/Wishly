@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { emptyValues, ProductForm, type FormValues } from "@/components/ProductForm";
+import { ATTRIBUTE_LABELS } from "@/lib/config";
 import { normalizeUrl } from "@/lib/engine/match";
+import { extractAttributes, guessName } from "@/lib/extract";
 import { isSafeHttpUrl } from "@/lib/validation";
 
 interface Known {
@@ -12,24 +14,48 @@ interface Known {
   size: string | null; shape: string | null; description: string | null;
 }
 
-const SAMPLE_VALUES: FormValues = {
-  ...emptyValues, product_name: "Atlas Structured Work Tote", retailer: "Maison Larue", category: "Tote",
-  color: "Black", material: "Leather", style: "Structured", hardware: "Gold", closure: "Zipper", size: "Medium",
-};
-
-async function downscale(src: string, max = 640): Promise<string> {
+/** Draws the image to a canvas. `longSide` is the target size of the longer edge (small images are upscaled). */
+async function rasterize(src: string, longSide: number, mime: "image/png" | "image/jpeg", maxScale = 1): Promise<string> {
   const img = new Image();
   img.src = src;
   await img.decode();
-  const scale = Math.min(1, max / Math.max(img.width || max, img.height || max));
+  const w = img.naturalWidth || img.width || longSide;
+  const h = img.naturalHeight || img.height || longSide;
+  const scale = Math.min(maxScale, longSide / Math.max(w, h));
   const c = document.createElement("canvas");
-  c.width = Math.round((img.width || max) * scale);
-  c.height = Math.round((img.height || max) * scale);
+  c.width = Math.max(1, Math.round(w * scale));
+  c.height = Math.max(1, Math.round(h * scale));
   const ctx = c.getContext("2d")!;
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, c.width, c.height);
   ctx.drawImage(img, 0, 0, c.width, c.height);
-  return c.toDataURL("image/jpeg", 0.8);
+  return mime === "image/png" ? c.toDataURL("image/png") : c.toDataURL("image/jpeg", 0.8);
+}
+
+/** Reads text from the image entirely in the browser (Tesseract.js). Nothing is uploaded. */
+async function readText(src: string, onProgress: (pct: number) => void): Promise<string> {
+  const png = await rasterize(src, 1400, "image/png", 3);
+  const { createWorker } = await import("tesseract.js");
+  const worker = await createWorker("eng", 1, {
+    logger: (m: { status: string; progress: number }) => {
+      if (m.status === "recognizing text") onProgress(Math.round(m.progress * 100));
+    },
+  });
+  try {
+    const { data } = await worker.recognize(png);
+    return data.text;
+  } finally {
+    await worker.terminate();
+  }
+}
+
+interface Shot {
+  src: string;
+  phase: "reading" | "ready";
+  progress: number;
+  initial: FormValues;
+  found: string[];
+  failed: boolean;
 }
 
 export function NewProductClient({ known }: { known: Known[] }) {
@@ -41,9 +67,9 @@ export function NewProductClient({ known }: { known: Known[] }) {
   const [urlStage, setUrlStage] = useState<{ initial: FormValues; catalogId: string | null; recognised: boolean } | null>(null);
 
   // Screenshot flow
-  const [preview, setPreview] = useState<string | null>(null);
-  const [isSample, setIsSample] = useState(false);
+  const [shot, setShot] = useState<Shot | null>(null);
   const [retain, setRetain] = useState(false);
+  const runId = useRef(0);
 
   function lookup(e: React.FormEvent) {
     e.preventDefault();
@@ -70,15 +96,44 @@ export function NewProductClient({ known }: { known: Known[] }) {
     }
   }
 
+  async function analyse(src: string) {
+    const id = ++runId.current;
+    setShot({ src, phase: "reading", progress: 0, initial: emptyValues, found: [], failed: false });
+    try {
+      const text = await readText(src, (pct) => {
+        if (runId.current === id) setShot((s) => (s && s.phase === "reading" ? { ...s, progress: pct } : s));
+      });
+      if (runId.current !== id) return; // superseded or skipped
+      const a = extractAttributes(text);
+      const name = guessName(text);
+      const initial: FormValues = {
+        ...emptyValues, product_name: name,
+        category: a.category ?? "", color: a.color ?? "", material: a.material ?? "", style: a.style ?? "",
+        silhouette: a.silhouette ?? "", hardware: a.hardware ?? "", closure: a.closure ?? "", size: a.size ?? "",
+      };
+      const found = [
+        ...(name ? ["Name"] : []),
+        ...(Object.entries(a) as [keyof typeof a, string | null][]).filter(([, v]) => v).map(([k]) => ATTRIBUTE_LABELS[k]),
+      ];
+      setShot({ src, phase: "ready", progress: 100, initial, found, failed: false });
+    } catch {
+      if (runId.current === id) setShot({ src, phase: "ready", progress: 0, initial: emptyValues, found: [], failed: true });
+    }
+  }
+
   function onFile(file: File | undefined) {
     if (!file) return;
     if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 8_000_000) {
       return alert("Please choose a PNG, JPEG or WebP image under 8 MB.");
     }
-    setIsSample(false);
     const reader = new FileReader();
-    reader.onload = () => setPreview(String(reader.result));
+    reader.onload = () => analyse(String(reader.result));
     reader.readAsDataURL(file);
+  }
+
+  function skip() {
+    runId.current++; // ignore the in-flight result
+    setShot((s) => (s ? { ...s, phase: "ready", initial: emptyValues, found: [], failed: false } : s));
   }
 
   return (
@@ -141,34 +196,49 @@ export function NewProductClient({ known }: { known: Known[] }) {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label className="btn-primary cursor-pointer">
               Choose screenshot
-              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = ""; }} />
             </label>
-            <button type="button" className="btn-ghost" onClick={() => { setPreview("/sample-screenshot.svg"); setIsSample(true); }}>Use the sample screenshot</button>
+            <button type="button" className="btn-ghost" onClick={() => analyse("/sample-screenshot.svg")}>Use the sample screenshot</button>
           </div>
           <p className="text-xs text-ink/60">
-            Screenshots are <strong>not uploaded or analysed</strong>: the image stays in your browser. You enter the details yourself, and you confirm them before saving.
+            We read the text in your screenshot <strong>in your browser</strong> to pre-fill the form. The image is never uploaded. You review and edit everything before saving.
           </p>
-          {preview && (
+          {shot && (
             <div className="grid gap-6 md:grid-cols-[220px_1fr]">
               <div className="space-y-3">
-                <img src={preview} alt="Your screenshot" className="w-full rounded-xl border border-ink/10" />
+                <img src={shot.src} alt="Your screenshot" className="w-full rounded-xl border border-ink/10" />
                 <label className="flex items-start gap-2 text-sm">
                   <input type="checkbox" className="mt-1 accent-clay-600" checked={retain} onChange={(e) => setRetain(e.target.checked)} />
                   <span>Keep this image with the saved product <span className="block text-xs text-ink/50">Off by default. If unchecked, the screenshot is discarded.</span></span>
                 </label>
               </div>
-              <ProductForm
-                key={isSample ? "sample" : preview.slice(0, 40)}
-                initial={isSample ? SAMPLE_VALUES : emptyValues}
-                submitLabel="Confirm & save"
-                onBeforeSubmit={async (v) => (retain ? { ...v, image_url: await downscale(preview) } : v)}
-                notice={
-                  <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                    {isSample ? "These sample values are a suggestion, not read from the image. " : ""}
-                    Please enter or correct the details. Nothing is saved until you confirm.
-                  </p>
-                }
-              />
+              {shot.phase === "reading" ? (
+                <div className="space-y-3 rounded-2xl border border-ink/10 p-5" role="status" aria-live="polite">
+                  <p className="font-medium">Reading your screenshot…</p>
+                  <div className="h-2 overflow-hidden rounded-full bg-sand">
+                    <div className="h-full rounded-full bg-clay-500 transition-all" style={{ width: `${Math.max(5, shot.progress)}%` }} />
+                  </div>
+                  <p className="text-xs text-ink/60">The first scan downloads a small text-reading engine, so it can take a little longer.</p>
+                  <button type="button" className="btn-ghost" onClick={skip}>Skip and fill in manually</button>
+                </div>
+              ) : (
+                <ProductForm
+                  key={`${shot.src.slice(-40)}-${shot.found.join()}-${shot.failed}`}
+                  initial={shot.initial}
+                  submitLabel="Confirm & save"
+                  onBeforeSubmit={async (v) => (retain ? { ...v, image_url: await rasterize(shot.src, 640, "image/jpeg") } : v)}
+                  notice={
+                    <p className={`rounded-lg px-3 py-2 text-sm ${shot.found.length ? "bg-amber-50 text-amber-900" : "bg-sand text-ink/80"}`}>
+                      {shot.failed
+                        ? "We couldn't read this screenshot, so please fill in the details yourself."
+                        : shot.found.length
+                          ? `Pre-filled from the text we could read: ${shot.found.join(", ")}. This can be wrong. Please check every field. Anything we couldn't confirm is left as Unknown.`
+                          : "We couldn't find readable product details in this image. Please enter them yourself."}{" "}
+                      Nothing is saved until you confirm.
+                    </p>
+                  }
+                />
+              )}
             </div>
           )}
         </section>

@@ -8,8 +8,8 @@
   <circle cx="180" cy="168" r="6" fill="#c9a227"/>
   <rect x="100" y="150" width="160" height="6" fill="#c9a227"/>
   <text x="20" y="346" font-family="Georgia,serif" font-size="20" fill="#1f1b16">Atlas Structured Work Tote</text>
-  <text x="20" y="372" font-family="Arial,sans-serif" font-size="13" fill="#555">Black leather · gold-tone hardware</text>
-  <text x="20" y="394" font-family="Arial,sans-serif" font-size="13" fill="#555">Zip-top closure · medium</text>
+  <text x="20" y="372" font-family="Arial,sans-serif" font-size="13" fill="#444">Black leather with gold-tone hardware</text>
+  <text x="20" y="394" font-family="Arial,sans-serif" font-size="13" fill="#444">Zip-top closure. Size: medium</text>
   <rect x="20" y="420" width="320" height="42" rx="21" fill="#1f1b16"/>
   <text x="180" y="446" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#fff">Sample screenshot</text>
 </svg>

@@ -7,7 +7,7 @@ Save handbags from any retailer, say what matters (must-have / prefer / don't ca
 ## Features
 
 - Email/password auth, protected routes, per-user wishlists (RLS).
-- Save a product by **URL** (sample catalog URLs auto-fill; others keep the URL and you fill the form) or by **screenshot** (stays in the browser; you confirm the attributes; image kept only if you opt in).
+- Save a product by **URL** (sample catalog URLs auto-fill; others keep the URL and you fill the form) or by **screenshot**. The text in the image is read in the browser with Tesseract.js (free, no API; the image is never uploaded) and run through the same deterministic rules as live search to pre-fill the form. You review and edit everything; the image is kept only if you opt in. It reads text, not pictures, so a bare photo pre-fills little.
 - 44-bag seeded catalog (totes, shoulder, crossbody, satchel, bucket, top-handle).
 - Preference picker, hard filtering, weighted scoring, ranked top 3, deterministic explanations, side-by-side comparison, helpful / not-helpful feedback.
 - Optional live Google Shopping results through SerpAPI, quota-limited to 250/month app-wide, cached, and feeding the **same** engine.
@@ -120,7 +120,7 @@ npm run build
 - **Vercel Hobby:** non-commercial use only; serverless time limits (live search has a 10 s timeout).
 - **SerpAPI Free:** 250 searches/month; results are whatever Google Shopping returns, so many attributes will be unknown.
 - Catalog items are **sample data** (illustrative retailers and `example.com` URLs, drawn illustrations instead of photos).
-- Screenshots aren't analysed (no AI); users enter attributes.
+- Screenshot pre-fill is OCR only (text, not images); the first scan downloads a ~5-15 MB engine from a CDN, and results can be wrong or empty, so users confirm every field.
 - Quota counting is per calendar month in UTC.
 - Quota/cache/share paths require the service-role key on the server.
 - The in-memory request de-duplication of identical live searches is per server instance (the quota itself is global and atomic).
