@@ -62,8 +62,12 @@ export interface ComparisonCell {
 
 export interface Recommendation {
   product: Product;
-  /** 0-100, or null when the user selected no "Prefer" attributes. */
+  /** 0-100, or null when the user selected no "Prefer" attributes. Unknown attributes earn nothing. */
   score: number | null;
+  /** Of only the preferred attributes the listing actually states: the share (0-100) that match. */
+  confirmedScore: number | null;
+  /** How many of the preferred attributes the listing states (confirmed) and how many of those match. */
+  coverage: { total: number; confirmed: number; matches: number };
   matched: Attribute[];
   differences: Attribute[];
   unknown: Attribute[];

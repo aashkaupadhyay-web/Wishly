@@ -115,6 +115,25 @@ describe("scoring and ranking", () => {
     expect(res.recommendations.map((r) => r.product.name)).toEqual(["Z but Google's top result", "A first alphabetically"]);
   });
 
+  it("reports coverage and the match rate among confirmed details separately from the score", () => {
+    // preferred: color, style, size. This listing only states color + style, and both match.
+    const r = recommend(base, [mk({ name: "partial", size: null })], prefs).recommendations[0];
+    expect(r.score).toBe(72.7); // unknown size earns nothing
+    expect(r.coverage).toEqual({ total: 3, confirmed: 2, matches: 2 });
+    expect(r.confirmedScore).toBe(100);
+  });
+
+  it("uses the confirmed match rate as a tie-breaker when scores are equal", () => {
+    // Both earn only size (15/55). A also states a mismatching color; B states nothing else.
+    const a = mk({ name: "A", color: "Brown", style: null });
+    const b = mk({ name: "B", color: null, style: null });
+    const res = recommend(base, [a, b], prefs, 10);
+    expect(res.recommendations[0].score).toBe(res.recommendations[1].score);
+    expect(res.recommendations.map((r) => r.product.name)).toEqual(["B", "A"]);
+    expect(res.recommendations[0].confirmedScore).toBe(100);
+    expect(res.recommendations[1].confirmedScore).toBe(37.5);
+  });
+
   it("returns null scores (not a fake 100) when nothing is preferred", () => {
     const none: Preferences = { ...prefs, color: { mode: "ignore", value: null }, style: { mode: "ignore", value: null }, size: { mode: "ignore", value: null } };
     const res = recommend(base, [mk({ name: "a" })], none);

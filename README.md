@@ -91,6 +91,7 @@ One engine (`src/lib/engine/match.ts`) serves both sources:
 1. **Candidates** = catalog (+ live results, normalised to the same `Product` shape).
 2. **Hard filter:** drop the original product, duplicates, any candidate failing a **Must-have**, and any candidate where a must-have attribute is **unknown** (unknown and "Other" never match).
 3. **Score** over **Prefer** attributes only: `earned weight ÷ total preferred weight × 100`. Unknown earns nothing; Don't-care is excluded; must-haves aren't double-counted. Weights live in `src/lib/config.ts` (color 25, material 25, style 15 + silhouette 10, hardware 10, size 15; bag type and closure are optional extras that count only when preferred).
+   Each card also shows **coverage** ("3 of 8 preferred details confirmed · 3 of 3 match") so a low score caused by missing information is visible; the confirmed match rate is used as a tie-breaker. Live results usually confirm only color, material and bag type, so Discover offers a one-click "Focus on what listings usually state" when live search is on.
 4. **Equivalences** are explicit in config (e.g. black ≈ jet black); leather ≠ vegan leather.
 5. **Rank** by score, then more matched attributes, fewer unknowns, then name (fully deterministic). Show up to 3; fewer if fewer qualify, with an explanation.
 6. **Explanation** text is generated from the actual comparison cells. No AI.

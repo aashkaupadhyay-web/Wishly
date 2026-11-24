@@ -19,6 +19,9 @@ interface Response {
   liveStats: { fetched: number; passed: number; hasMustHaves: boolean };
 }
 
+/** Details that live Google Shopping titles rarely state. */
+const LIVE_RARE: Attribute[] = ["silhouette", "hardware", "closure", "size"];
+
 const MODES: { mode: PreferenceMode; label: string }[] = [
   { mode: "must", label: "Must-have" },
   { mode: "prefer", label: "Prefer" },
@@ -46,6 +49,14 @@ export function DiscoverClient({ items, initialId, liveAvailable }: { items: Wis
 
   const setPref = (a: Attribute, patch: Partial<Preferences[Attribute]>) =>
     setPrefs((p) => ({ ...p, [a]: { ...p[a], ...patch } }));
+
+  /** One click: stop scoring on details live listings rarely state. Must-haves are never touched. */
+  const focusForLive = () =>
+    setPrefs((p) => {
+      const next = { ...p };
+      for (const a of LIVE_RARE) if (next[a].mode === "prefer") next[a] = { ...next[a], mode: "ignore" };
+      return next;
+    });
 
   async function search() {
     setBusy(true);
@@ -180,6 +191,16 @@ export function DiscoverClient({ items, initialId, liveAvailable }: { items: Wis
                 </span>
               </span>
             </label>
+            {includeLive && liveAvailable && LIVE_RARE.some((a) => prefs[a].mode === "prefer") && (
+              <div className="rounded-lg bg-sand/70 p-3 text-xs text-ink/70" role="note">
+                Google Shopping titles rarely state{" "}
+                {LIVE_RARE.filter((a) => prefs[a].mode === "prefer").map((a) => ATTRIBUTE_LABELS[a].toLowerCase()).join(", ")}, so live
+                scores look low when you prefer them.
+                <button type="button" className="mt-1 block font-medium text-clay-600 underline" onClick={focusForLive}>
+                  Focus on what listings usually state
+                </button>
+              </div>
+            )}
             <button className="btn-primary w-full" onClick={search} disabled={busy}>
               {busy ? "Searching…" : data ? "Update results" : "Find alternatives"}
             </button>
@@ -258,6 +279,13 @@ export function DiscoverClient({ items, initialId, liveAvailable }: { items: Wis
                             </>
                           )}
                         </div>
+                        {rec.coverage.total > 0 && (
+                          <p className="rounded-lg bg-sand/70 px-2.5 py-1.5 text-xs text-ink/70">
+                            <strong>{rec.coverage.confirmed} of {rec.coverage.total}</strong> preferred details confirmed
+                            {rec.coverage.confirmed > 0 && <> · <strong>{rec.coverage.matches} of {rec.coverage.confirmed}</strong> match</>}
+                            {rec.coverage.confirmed < rec.coverage.total && <span className="block text-ink/50">The score gives unconfirmed details no points.</span>}
+                          </p>
+                        )}
                         <p className="text-sm text-ink/80">{rec.explanation}</p>
                         <div className="flex flex-wrap gap-1 text-xs">
                           {rec.matched.map((a) => <span key={a} className="rounded-full bg-green-100 px-2 py-0.5 text-green-900">✓ {ATTRIBUTE_LABELS[a]}</span>)}

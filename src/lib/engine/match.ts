@@ -145,6 +145,32 @@ export function scoreCandidate(candidate: Product, rawPrefs: Preferences): numbe
   return Math.round((earned / total) * 1000) / 10;
 }
 
+/**
+ * Transparency companion to the score: how much of what you prefer can the listing actually confirm,
+ * and of that, how much matches? (The headline score still gives unknowns zero points.)
+ */
+export function coverageOf(candidate: Product, rawPrefs: Preferences) {
+  const prefs = effectivePreferences(rawPrefs);
+  let total = 0;
+  let confirmed = 0;
+  let matches = 0;
+  let confirmedWeight = 0;
+  let earned = 0;
+  for (const attr of ATTRIBUTES) {
+    if (prefs[attr].mode !== "prefer") continue;
+    total++;
+    if (!isKnown(candidate[attr])) continue;
+    confirmed++;
+    confirmedWeight += SCORE_WEIGHTS[attr];
+    if (valuesMatch(attr, prefs[attr].value, candidate[attr])) {
+      matches++;
+      earned += SCORE_WEIGHTS[attr];
+    }
+  }
+  const confirmedScore = confirmedWeight > 0 ? Math.round((earned / confirmedWeight) * 1000) / 10 : null;
+  return { coverage: { total, confirmed, matches }, confirmedScore };
+}
+
 export function compare(original: Product, candidate: Product, rawPrefs: Preferences): ComparisonCell[] {
   const prefs = effectivePreferences(rawPrefs);
   return ATTRIBUTES.map((attr) => {
@@ -239,9 +265,12 @@ export function recommend(
   const scored: Recommendation[] = passed.map((product) => {
     const score = scoreCandidate(product, prefs);
     const cells = compare(original, product, prefs);
+    const { coverage, confirmedScore } = coverageOf(product, prefs);
     return {
       product,
       score,
+      confirmedScore,
+      coverage,
       cells,
       matched: cells.filter((c) => c.status === "match").map((c) => c.attribute),
       differences: cells.filter((c) => c.status === "differ").map((c) => c.attribute),
@@ -255,6 +284,8 @@ export function recommend(
     (a, b) =>
       (b.score ?? -1) - (a.score ?? -1) ||
       b.matched.length - a.matched.length ||
+      // Same score: prefer the listing whose stated details match more reliably.
+      (b.confirmedScore ?? -1) - (a.confirmedScore ?? -1) ||
       a.unknown.length - b.unknown.length ||
       // Google's own relevance order beats alphabetical for live results.
       (a.product.rank ?? 0) - (b.product.rank ?? 0) ||
