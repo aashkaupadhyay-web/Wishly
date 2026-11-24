@@ -31,7 +31,7 @@ npm install
    (Or with the Supabase CLI: `supabase link --project-ref <ref>` then `supabase db push`.)
 3. **Load the sample catalog:** paste `supabase/seed.sql` into the SQL editor and run it. It's idempotent. Regenerate it from `src/data/catalog.ts` with `npm run seed:sql`.
 4. **Auth → Providers → Email:** enabled by default. For a frictionless demo you may turn off *Confirm email*; otherwise new users must click the emailed link.
-5. **Guest mode:** in **Auth → Sign In / Providers**, turn on **Allow anonymous sign-ins**, or the "Continue as guest" button will show an error. Guests can later add an email and password in Settings and keep their wishlist. Guests can't use live search (it protects the shared SerpAPI credits). Clean up stale guests occasionally with `supabase/maintenance/delete_stale_guests.sql`. Supabase rate-limits anonymous sign-ins per IP.
+5. **Guest mode:** in **Auth → Sign In / Providers**, turn on **Allow anonymous sign-ins**, or the "Continue as guest" button will show an error. Guests can later add an email and password in Settings and keep their wishlist. Guests can use live search too, so they draw on the same shared 250-search monthly pool (anonymous sign-ins are easy to create, so watch usage in Settings). Clean up stale guests occasionally with `supabase/maintenance/delete_stale_guests.sql`. Supabase rate-limits anonymous sign-ins per IP.
 6. **Auth → URL Configuration:**
    - *Site URL:* `http://localhost:3000` locally, your Vercel URL in production.
    - *Redirect URLs:* add `http://localhost:3000/auth/callback` and `https://<your-app>.vercel.app/auth/callback`.

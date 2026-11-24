@@ -39,11 +39,7 @@ export async function POST(req: Request) {
   };
   const cfg = liveConfig();
   if (includeLive) {
-    // Server-side enforcement: guests can't spend the shared SerpAPI credits, whatever the client sends.
-    if (auth.user.is_anonymous) {
-      live.status = "not_configured";
-      live.message = "Live search is for signed-up accounts. Showing results from the built-in catalog.";
-    } else if (!cfg.available) {
+    if (!cfg.available) {
       live.status = cfg.reason === "disabled" ? "disabled" : "not_configured";
       live.message =
         cfg.reason === "disabled"

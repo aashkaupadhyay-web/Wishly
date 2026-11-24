@@ -25,7 +25,7 @@ const MODES: { mode: PreferenceMode; label: string }[] = [
   { mode: "ignore", label: "Don't care" },
 ];
 
-export function DiscoverClient({ items, initialId, liveAvailable, liveNote }: { items: WishlistRow[]; initialId: string; liveAvailable: boolean; liveNote?: string }) {
+export function DiscoverClient({ items, initialId, liveAvailable }: { items: WishlistRow[]; initialId: string; liveAvailable: boolean }) {
   const [itemId, setItemId] = useState(initialId);
   const row = items.find((i) => i.id === itemId)!;
   const original = useMemo(() => rowToProduct(row), [row]);
@@ -176,7 +176,7 @@ export function DiscoverClient({ items, initialId, liveAvailable, liveNote }: { 
               <span>
                 Also search Google Shopping (live)
                 <span className="block text-xs text-ink/50">
-                  {liveAvailable ? "Uses one of this app's limited monthly searches. Repeats are cached." : (liveNote ?? "Live search is off. Using the built-in catalog.")}
+                  {liveAvailable ? "Uses one of this app's limited monthly searches. Repeats are cached." : "Live search is off. Using the built-in catalog."}
                 </span>
               </span>
             </label>
