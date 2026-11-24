@@ -125,6 +125,7 @@ describe("live search quota, cache, and failure handling", () => {
     const { deps, used } = fakeDeps({ fetchImpl: bad as unknown as typeof fetch });
     const r = await liveSearch("fail", deps);
     expect(r.status).toBe("error");
+    expect(r.detail).toContain("HTTP 500");
     expect(r.products).toEqual([]);
     expect(bad).toHaveBeenCalledTimes(1);
     expect(used()).toBe(1);

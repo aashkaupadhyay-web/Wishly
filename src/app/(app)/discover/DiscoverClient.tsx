@@ -10,7 +10,7 @@ import { ATTRIBUTES, type Attribute, type PreferenceMode, type Preferences, type
 type Rec = Recommendation & { resultId: string | null };
 interface Response {
   searchId: string | null;
-  live: { status: string; message: string | null; query: string; count: number };
+  live: { status: string; message: string | null; query: string; count: number; detail?: string };
   considered: number;
   excluded: { mustFail: number; unknownRequired: number; sameProduct: number; duplicate: number };
   notice: string | null;
@@ -203,7 +203,10 @@ export function DiscoverClient({ items, initialId, liveAvailable }: { items: Wis
           {data && !busy && (
             <>
               {data.live.message && includeLive && (
-                <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">{data.live.message}</p>
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+                  {data.live.message}
+                  {data.live.detail && <span className="mt-0.5 block text-xs text-amber-900/70">Details: {data.live.detail}</span>}
+                </p>
               )}
               {data.live.count > 0 && (
                 <p className="text-xs text-ink/50">Included {data.live.count} live results for “{data.live.query}”{data.live.status === "cached" ? " (cached)" : ""}.</p>

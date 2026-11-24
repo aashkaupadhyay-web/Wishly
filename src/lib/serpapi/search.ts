@@ -10,6 +10,8 @@ export interface LiveResult {
   products: Product[];
   message: string | null;
   query: string;
+  /** Short, non-secret reason for a failure (shown to help debugging). Never contains the API key. */
+  detail?: string;
 }
 
 export interface LiveSearchDeps {
@@ -49,11 +51,12 @@ export function liveSearch(query: string, deps: LiveSearchDeps): Promise<LiveRes
 }
 
 async function run(query: string, key: string, deps: LiveSearchDeps): Promise<LiveResult> {
-  const fail = (status: Exclude<LiveStatus, "ok" | "cached">): LiveResult => ({
+  const fail = (status: Exclude<LiveStatus, "ok" | "cached">, detail?: string): LiveResult => ({
     status,
     products: [],
     message: MESSAGES[status],
     query,
+    detail,
   });
 
   if (deps.enabled !== "true") return fail("disabled");
@@ -69,9 +72,9 @@ async function run(query: string, key: string, deps: LiveSearchDeps): Promise<Li
   let reservation: { allowed: boolean; used: number };
   try {
     reservation = await deps.reserve(deps.limit);
-  } catch {
+  } catch (e) {
     // If we can't prove we're under quota, we don't call the API.
-    return fail("error");
+    return fail("error", `quota check failed: ${e instanceof Error ? e.message.slice(0, 120) : "unknown"}`);
   }
   if (!reservation.allowed) return fail("quota_exhausted");
 
@@ -93,12 +96,20 @@ async function run(query: string, key: string, deps: LiveSearchDeps): Promise<Li
     } finally {
       clearTimeout(timer);
     }
-    if (!res.ok) return fail("error");
+    if (!res.ok) {
+      let msg = "";
+      try {
+        msg = String((await res.json())?.error ?? "").slice(0, 120);
+      } catch {
+        /* body wasn't JSON */
+      }
+      return fail("error", `SerpAPI HTTP ${res.status}${msg ? `: ${msg}` : ""}`);
+    }
     const json = await res.json();
     if (json?.error && !json?.shopping_results) {
       // SerpAPI returns an error string for "no results" too; treat as empty, not as a crash.
       const empty = /hasn't returned any results/i.test(String(json.error));
-      if (!empty) return fail("error");
+      if (!empty) return fail("error", `SerpAPI: ${String(json.error).slice(0, 120)}`);
     }
     const products = normalizeSerpResults(json);
     try {
@@ -107,7 +118,8 @@ async function run(query: string, key: string, deps: LiveSearchDeps): Promise<Li
       /* caching is best-effort */
     }
     return { status: "ok", products, message: null, query };
-  } catch {
-    return fail("error");
+  } catch (e) {
+    // Only the error name is reported: fetch error messages can echo the request URL (which holds the key).
+    return fail("error", e instanceof Error && e.name === "AbortError" ? "request timed out" : `request failed (${e instanceof Error ? e.name : "unknown"})`);
   }
 }

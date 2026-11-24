@@ -69,5 +69,5 @@ export const SERPAPI = {
   monthlyLimit: Math.min(250, Math.max(0, Number(process.env.SERPAPI_MONTHLY_LIMIT ?? 250) || 0)),
   cacheTtlDays: 14,
   endpoint: "https://serpapi.com/search.json",
-  timeoutMs: 10_000,
+  timeoutMs: 20_000,
 };

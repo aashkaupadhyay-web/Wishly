@@ -8,6 +8,9 @@ import { liveSearch, type LiveResult } from "@/lib/serpapi/search";
 import type { Preferences, Product } from "@/lib/types";
 import { recommendRequestSchema } from "@/lib/validation";
 
+// Google Shopping can take several seconds; give the whole request room on Vercel.
+export const maxDuration = 30;
+
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return jsonError("Bad origin", 403);
   const auth = await requireUser();
@@ -31,7 +34,7 @@ export async function POST(req: Request) {
   const candidates: Product[] = await loadCatalog(auth.supabase);
 
   // Source B: live Google Shopping, optional and quota-limited. Failure never blocks Source A.
-  let live: Pick<LiveResult, "status" | "message" | "query"> & { count: number } = {
+  let live: Pick<LiveResult, "status" | "message" | "query" | "detail"> & { count: number } = {
     status: "disabled",
     message: "Live search is turned off. Showing results from the built-in catalog.",
     query: "",
@@ -49,7 +52,8 @@ export async function POST(req: Request) {
       try {
         const res = await liveSearch(buildQuery(original, preferences), supabaseDeps());
         candidates.push(...res.products);
-        live = { status: res.status, message: res.message, query: res.query, count: res.products.length };
+        live = { status: res.status, message: res.message, query: res.query, count: res.products.length, detail: res.detail };
+        if (res.status === "error") console.error("[live-search]", res.detail);
       } catch {
         live = { status: "error", message: "Live search didn't respond. Showing results from the built-in catalog.", query: "", count: 0 };
       }
