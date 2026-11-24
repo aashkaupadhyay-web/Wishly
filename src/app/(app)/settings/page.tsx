@@ -1,6 +1,7 @@
 import { liveConfig, getUsage } from "@/lib/serpapi/runtime";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "./SignOutButton";
+import { UpgradeForm } from "./UpgradeForm";
 
 export const metadata = { title: "Settings · Wishly" };
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ export default async function SettingsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const isGuest = Boolean(user?.is_anonymous);
   const cfg = liveConfig();
   const usage = await getUsage().catch(() => null);
 
@@ -25,10 +27,17 @@ export default async function SettingsPage() {
     <div className="mx-auto max-w-2xl space-y-8">
       <h1 className="font-display text-3xl">Settings</h1>
 
-      <section className="card space-y-1 p-5">
+      <section className="card space-y-3 p-5">
         <h2 className="font-display text-xl">Account</h2>
-        <p className="text-sm text-ink/70">Signed in as <strong>{user?.email}</strong></p>
-        <div className="pt-3"><SignOutButton /></div>
+        {isGuest ? (
+          <>
+            <p className="text-sm text-ink/70">You&apos;re using Wishly as a <strong>guest</strong>. Signing out or clearing this browser&apos;s data loses your wishlist.</p>
+            <UpgradeForm />
+          </>
+        ) : (
+          <p className="text-sm text-ink/70">Signed in as <strong>{user?.email}</strong></p>
+        )}
+        <div className="pt-1"><SignOutButton isGuest={isGuest} /></div>
       </section>
 
       <section className="card space-y-3 p-5" aria-labelledby="live-h">

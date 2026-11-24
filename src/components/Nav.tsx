@@ -11,11 +11,12 @@ const LINKS = [
   { href: "/settings", label: "Settings" },
 ];
 
-export function Nav() {
+export function Nav({ isGuest = false }: { isGuest?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
 
   async function signOut() {
+    if (isGuest && !confirm("Guest wishlists can't be recovered after signing out. Sign out anyway? (You can save your account in Settings first.)")) return;
     await createClient().auth.signOut();
     router.replace("/login");
     router.refresh();

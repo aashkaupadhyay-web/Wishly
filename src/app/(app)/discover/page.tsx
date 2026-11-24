@@ -12,6 +12,10 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
   const { data } = await supabase.from("wishlist_items").select("*").order("created_at", { ascending: false });
   const rows = (data ?? []) as WishlistRow[];
   const cfg = liveConfig();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isGuest = Boolean(user?.is_anonymous);
 
   if (rows.length === 0) {
     return (
@@ -27,7 +31,8 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
     <DiscoverClient
       items={rows}
       initialId={rows.find((r) => r.id === item)?.id ?? rows[0].id}
-      liveAvailable={cfg.available}
+      liveAvailable={cfg.available && !isGuest}
+      liveNote={cfg.available && isGuest ? "Live search is for signed-up accounts. Save your account in Settings to use it." : undefined}
     />
   );
 }

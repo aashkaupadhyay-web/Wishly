@@ -47,6 +47,23 @@ export function LoginForm() {
     setBusy(false);
   }
 
+  async function continueAsGuest() {
+    setBusy(true);
+    setError(null);
+    const { error } = await createClient().auth.signInAnonymously();
+    if (error) {
+      setError(
+        /anonymous/i.test(error.message)
+          ? "Guest mode isn't enabled on this site yet. Please sign in or create an account."
+          : error.message,
+      );
+      setBusy(false);
+      return;
+    }
+    router.replace(dest);
+    router.refresh();
+  }
+
   return (
     <form onSubmit={submit} className="card space-y-4 p-6" aria-label={mode === "signin" ? "Sign in" : "Create account"}>
       <h2 className="font-display text-2xl">{mode === "signin" ? "Welcome back" : "Create your account"}</h2>
@@ -64,6 +81,9 @@ export function LoginForm() {
       <button className="btn-primary w-full" disabled={busy}>
         {busy ? "One moment…" : mode === "signin" ? "Sign in" : "Create account"}
       </button>
+      <div className="flex items-center gap-3 text-xs text-ink/40"><span className="h-px flex-1 bg-ink/10" />or<span className="h-px flex-1 bg-ink/10" /></div>
+      <button type="button" className="btn-ghost w-full" disabled={busy} onClick={continueAsGuest}>Continue as guest</button>
+      <p className="text-center text-xs text-ink/50">Guests can save and discover right away. Their wishlist stays in this browser unless they create an account later.</p>
       <button type="button" className="w-full text-center text-sm text-ink/60 underline" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(null); setInfo(null); }}>
         {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
       </button>
