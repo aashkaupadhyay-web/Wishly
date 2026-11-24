@@ -256,6 +256,8 @@ export function recommend(
       (b.score ?? -1) - (a.score ?? -1) ||
       b.matched.length - a.matched.length ||
       a.unknown.length - b.unknown.length ||
+      // Google's own relevance order beats alphabetical for live results.
+      (a.product.rank ?? 0) - (b.product.rank ?? 0) ||
       a.product.name.localeCompare(b.product.name) ||
       (a.product.product_url ?? "").localeCompare(b.product.product_url ?? ""),
   );

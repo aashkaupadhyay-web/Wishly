@@ -7,19 +7,23 @@ type Rule = [RegExp, string];
 
 const CATEGORY: Rule[] = [
   [/\btotes?\b/i, "Tote"],
-  [/\bshoulder\s+bags?\b/i, "Shoulder Bag"],
-  [/\bcross[\s-]?body\b/i, "Crossbody"],
+  [/\b(shoulder\s+bags?|hobo|baguette)\b/i, "Shoulder Bag"],
+  [/\b(cross[\s-]?body|messenger|camera\s+bag)\b/i, "Crossbody"],
   [/\bsatchels?\b/i, "Satchel"],
-  [/\bbucket\s+bags?\b/i, "Bucket Bag"],
+  [/\bbucket(\s+bags?)?\b/i, "Bucket Bag"],
   [/\btop[\s-]?handle\b/i, "Top-Handle"],
 ];
 const COLOR: Rule[] = [
-  [/\b(black|jet black|onyx)\b/i, "Black"],
-  [/\bbrown\b/i, "Brown"],
-  [/\btan\b/i, "Tan"],
-  [/\bwhite\b/i, "White"],
-  [/\bbeige\b/i, "Beige"],
-  [/\bred\b/i, "Red"],
+  [/\b(black|jet black|onyx|noir)\b/i, "Black"],
+  [/\b(brown|chocolate|espresso|cognac|chestnut|mocha)\b/i, "Brown"],
+  [/\b(tan|camel|caramel)\b/i, "Tan"],
+  [/\b(white|ivory|off[\s-]white)\b/i, "White"],
+  [/\b(beige|cream|taupe|sand)\b/i, "Beige"],
+  [/\b(red|burgundy|cherry)\b/i, "Red"],
+  [/\b(blue|navy|denim|jeans|cobalt)\b/i, "Blue"],
+  [/\b(green|olive|sage|emerald)\b/i, "Green"],
+  [/\b(gr[ae]y|charcoal|silver\s+(?:bag|tote))\b/i, "Gray"],
+  [/\b(pink|blush|rose)\b/i, "Pink"],
 ];
 const MATERIAL: Rule[] = [
   [/\b(vegan|faux|pu)[\s-]leather\b/i, "Vegan Leather"],
@@ -50,7 +54,7 @@ const HARDWARE: Rule[] = [
   [/\bblack\s+hardware\b/i, "Black"],
 ];
 const CLOSURE: Rule[] = [
-  [/\bzip(per|-top|\s+top|\s+closure)?\b/i, "Zipper"],
+  [/\bzip(per|ped|-top|\s+top|-around|\s+around|\s+closure)?\b/i, "Zipper"],
   [/\bmagnetic\b/i, "Magnetic Snap"],
   [/\bbuckle\b/i, "Buckle"],
   [/\bopen[\s-]top\b/i, "Open Top"],
@@ -89,7 +93,12 @@ export function extractAttributes(text: string) {
   };
 }
 
-const BAG_WORD = /\b(bag|tote|satchel|crossbody|hobo|bucket|shoulder|handbag|purse|clutch|backpack)\b/i;
+export const BAG_WORD =
+  /\b(bag|tote|satchel|cross[\s-]?body|hobo|bucket|shoulder|handbag|purse|clutch|backpack|baguette|messenger)\b/i;
+
+/** Accessories that mention bags but aren't bags (wallets, straps, charms, organizer inserts…). */
+export const ACCESSORY_WORD =
+  /\b(strap|charms?|wallets?|organizers?|inserts?|liners?|key\s?chains?|key\s?rings?|card\s?holders?|coin\s+purse|phone\s+case|dust\s+bag|bag\s+hanger|shaper|replacement|pattern|sewing)\b/i;
 
 /**
  * Best-effort product name from OCR lines: a short, mostly-alphabetic line that mentions a bag word,

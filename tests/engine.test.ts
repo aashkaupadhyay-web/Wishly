@@ -107,6 +107,14 @@ describe("scoring and ranking", () => {
     expect([...scores].sort((a, b) => b - a)).toEqual(scores);
   });
 
+  it("breaks ties by Google's result order before alphabetical", () => {
+    const res = recommend(base, [
+      mk({ name: "A first alphabetically", source: "serpapi", rank: 7 }),
+      mk({ name: "Z but Google's top result", source: "serpapi", rank: 0 }),
+    ], prefs, 10);
+    expect(res.recommendations.map((r) => r.product.name)).toEqual(["Z but Google's top result", "A first alphabetically"]);
+  });
+
   it("returns null scores (not a fake 100) when nothing is preferred", () => {
     const none: Preferences = { ...prefs, color: { mode: "ignore", value: null }, style: { mode: "ignore", value: null }, size: { mode: "ignore", value: null } };
     const res = recommend(base, [mk({ name: "a" })], none);

@@ -1,4 +1,4 @@
-import { extractAttributes } from "../extract";
+import { ACCESSORY_WORD, BAG_WORD, extractAttributes } from "../extract";
 import type { Product } from "../types";
 import { isSafeHttpUrl } from "../validation";
 
@@ -29,10 +29,12 @@ export function normalizeSerpResults(json: unknown): Product[] {
   const results = (json as { shopping_results?: unknown })?.shopping_results;
   if (!Array.isArray(results)) return [];
   const out: Product[] = [];
-  for (const raw of results as SerpShoppingResult[]) {
+  for (const [index, raw] of (results as SerpShoppingResult[]).entries()) {
     const name = str(raw?.title);
     const link = str(raw?.link) ?? str(raw?.product_link);
     if (!name || !link || !isSafeHttpUrl(link)) continue;
+    // Keep only actual bags: needs a bag word and must not be an accessory (strap, wallet, charm…).
+    if (!BAG_WORD.test(name) || ACCESSORY_WORD.test(name)) continue;
     const thumb = str(raw.thumbnail);
     const ext = Array.isArray(raw.extensions)
       ? raw.extensions.filter((e): e is string => typeof e === "string").join(" ")
@@ -42,6 +44,7 @@ export function normalizeSerpResults(json: unknown): Product[] {
     out.push({
       id: `serp-${hash(link + name)}`,
       source: "serpapi",
+      rank: index,
       name,
       retailer: str(raw.source),
       product_url: link,

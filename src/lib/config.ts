@@ -33,7 +33,7 @@ export const ATTRIBUTE_LABELS: Record<Attribute, string> = {
 /** Controlled vocabularies used by forms. Free-text values are still accepted. */
 export const OPTIONS: Record<Attribute | "shape", string[]> = {
   category: ["Tote", "Shoulder Bag", "Crossbody", "Satchel", "Bucket Bag", "Top-Handle", "Other"],
-  color: ["Black", "Brown", "Tan", "White", "Beige", "Red", "Other"],
+  color: ["Black", "Brown", "Tan", "White", "Beige", "Red", "Blue", "Green", "Gray", "Pink", "Other"],
   material: ["Leather", "Suede", "Canvas", "Nylon", "Vegan Leather", "Other"],
   style: ["Structured", "Slouchy", "Minimalist", "Classic", "Casual", "Other"],
   silhouette: ["Structured", "Slouchy", "Boxy", "Rounded", "Trapezoid", "Other"],

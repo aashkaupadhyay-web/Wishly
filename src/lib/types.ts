@@ -33,6 +33,8 @@ export interface Product {
   shape: string | null;
   description: string | null;
   catalog_product_id?: string | null;
+  /** Position in Google's own result order (0 = first). Used only as a late ranking tie-breaker. */
+  rank?: number;
 }
 
 export type PreferenceMode = "must" | "prefer" | "ignore";

@@ -38,6 +38,25 @@ describe("normalization", () => {
     expect(out[3]).toMatchObject({ size: "Medium", material: "Suede", category: "Crossbody" });
     expect(extractAttributes("Large capacity organizer").size).toBeNull();
   });
+  it("drops accessories and non-bags, and records Google's order", () => {
+    const res = normalizeSerpResults({
+      shopping_results: [
+        { title: "Leather Bag Strap Replacement", link: "https://a.example/1" },
+        { title: "Bag Charm Keychain", link: "https://a.example/2" },
+        { title: "Women's Wallet Black", link: "https://a.example/3" },
+        { title: "Black Nylon Tote Bag", link: "https://a.example/4" },
+        { title: "Navy Zip-Around Hobo Bag", link: "https://a.example/5" },
+      ],
+    });
+    expect(res.map((p) => p.name)).toEqual(["Black Nylon Tote Bag", "Navy Zip-Around Hobo Bag"]);
+    expect(res.map((p) => p.rank)).toEqual([3, 4]);
+    expect(res[1]).toMatchObject({ color: "Blue", category: "Shoulder Bag", closure: "Zipper" });
+  });
+  it("understands more color words and bag types", () => {
+    expect(extractAttributes("Espresso cognac satchel").color).toBe("Brown"); // both words mean Brown
+    expect(extractAttributes("Ivory camel tote").color).toBeNull(); // White vs Tan: ambiguous stays unknown
+    expect(extractAttributes("Denim bucket bag")).toMatchObject({ color: "Blue", category: "Bucket Bag" });
+  });
   it("tolerates garbage", () => {
     expect(normalizeSerpResults(null)).toEqual([]);
     expect(normalizeSerpResults({ shopping_results: "x" })).toEqual([]);
@@ -53,6 +72,10 @@ describe("query builder", () => {
   };
   it("builds the brief's example query without repeats", () => {
     expect(buildQuery(original, prefs)).toBe("black structured leather tote handbag zipper");
+  });
+  it("drops soft style words and prefer-only closure so Google isn't over-constrained", () => {
+    const soft = { ...prefs, style: { mode: "prefer", value: "Minimalist" }, silhouette: { mode: "ignore", value: null }, closure: { mode: "prefer", value: "Zipper" } } as Preferences;
+    expect(buildQuery(original, soft)).toBe("black leather tote handbag");
   });
   it("leaves out ignored attributes", () => {
     expect(buildQuery(original, { ...prefs, color: { mode: "ignore", value: null } })).not.toContain("black");

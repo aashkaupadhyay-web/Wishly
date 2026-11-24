@@ -103,7 +103,11 @@ export async function POST(req: Request) {
     considered: result.considered,
     excluded: result.excluded,
     notice: full.recommendations.length < 3 ? full.notice : null,
-    liveStats: { fetched: live.count, passed: livePassed },
+    liveStats: {
+      fetched: live.count,
+      passed: livePassed,
+      hasMustHaves: Object.values(preferences).some((p) => p.mode === "must" && Boolean(p.value)),
+    },
     recommendations: top.map((r, i) => ({ ...r, resultId: resultIds[i] })),
     liveRecommendations: liveTop.map((r, i) => ({ ...r, resultId: resultIds[top.length + i] })),
   });

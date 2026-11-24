@@ -10,14 +10,22 @@ export function buildQuery(original: Product, prefs: Preferences): string {
     return isKnown(v) ? (v as string).toLowerCase() : null;
   };
 
-  const style = wanted("style") ?? wanted("silhouette");
+  // Soft style words ("minimalist", "classic", "casual") are rarely in retailer titles, so they only
+  // narrow Google's results to nothing useful. Keep them only when required (or genuinely common).
+  const COMMON_STYLE = new Set(["structured", "slouchy"]);
+  const styleFor = (attr: "style" | "silhouette") => {
+    const v = wanted(attr);
+    return v && (prefs[attr].mode === "must" || COMMON_STYLE.has(v)) ? v : null;
+  };
+  const style = styleFor("style") ?? styleFor("silhouette");
   const parts = [
     wanted("color"),
     style,
     wanted("material"),
     wanted("category"),
     "handbag",
-    wanted("closure"),
+    // Closure is a narrow detail; only search on it when it's a must-have.
+    prefs.closure.mode === "must" ? wanted("closure") : null,
     prefs.hardware.mode === "must" ? wanted("hardware") : null,
     prefs.size.mode === "must" ? wanted("size") : null,
   ];

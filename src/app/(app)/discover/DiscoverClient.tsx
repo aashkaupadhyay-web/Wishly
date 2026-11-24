@@ -16,7 +16,7 @@ interface Response {
   notice: string | null;
   recommendations: Rec[];
   liveRecommendations: Rec[];
-  liveStats: { fetched: number; passed: number };
+  liveStats: { fetched: number; passed: number; hasMustHaves: boolean };
 }
 
 const MODES: { mode: PreferenceMode; label: string }[] = [
@@ -213,7 +213,7 @@ export function DiscoverClient({ items, initialId, liveAvailable }: { items: Wis
               )}
               {data.notice && <p className="rounded-lg bg-sand px-3 py-2 text-sm" role="status">{data.notice}</p>}
 
-              {includeLive && data.live.count > 0 && (
+              {includeLive && data.live.count > 0 && data.liveStats.hasMustHaves && (
                 <p className="text-sm text-ink/70" role="status">
                   {data.liveStats.passed === 0
                     ? `None of the ${data.liveStats.fetched} live results met your must-have requirements (live listings often don't state attributes like material or closure). Try changing a must-have to Prefer.`
