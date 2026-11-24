@@ -2,7 +2,14 @@
 
 Wishly is a free-tier shopping assistant for **handbags**: save products from any retailer, say which attributes are must-have / prefer / don't-care, and get ranked alternatives from a built-in catalog plus optional live Google Shopping (SerpAPI). Deployed on Vercel + Supabase. Repo: https://github.com/aashkaupadhyay-web/Wishly
 
-Read `docs/ARCHITECTURE.md` (how it fits together), `docs/DECISIONS.md` (why things are the way they are) and `docs/STATUS.md` (what's verified, known issues) before changing behaviour.
+Docs, read before changing behaviour:
+
+- `docs/REQUIREMENTS.md`: the full original product brief (what must and must not exist).
+- `docs/ARCHITECTURE.md`: how it fits together (data model, pipeline, flows).
+- `docs/DECISIONS.md`: why things are the way they are.
+- `docs/SETUP.md`: complete Supabase / Vercel / SerpAPI / GitHub setup, env vars, troubleshooting table.
+- `docs/STATUS.md`: what's verified, known limits, ideas not built.
+- `docs/CHANGELOG.md`: history of changes and the decisions made with the user.
 
 ## Hard rules (from the original product brief; don't break these)
 
